@@ -23,7 +23,16 @@ const face vector muv[] = {1, 1}; // Viscosity coefficient (e.g., nu = 1e-3)
 // File naming variables
 char logFile[80];          // Log file name
 char dumpFile[80];         // Restart file name
-char nameOut[80];          // Output snapshot file name
+char nameOut[80];          /**
+ * @brief Initializes the simulation environment and launches the simulation.
+ *
+ * Configures the simulation domain size based on the outer cylinder radius, centers the domain,
+ * and sets a grid resolution of 128 cells per dimension. It also sets the maximum timestep size for
+ * the implicit solver, creates the directory for simulation snapshots, assigns file names for dumping
+ * restart data and logging, and then starts the simulation.
+ *
+ * @return int Exit status.
+ */
 
 int main() {
   // Ajustamos el tamaño del dominio para que sea [-L0/2,L0/2] x [-L0/2,L0/2] (por ejemplo)
@@ -82,14 +91,11 @@ event writingFiles (t = 0.0; t += tsnap; t < tmax+tsnap) {
 }
 
 /**
- ## Write logs every timestep!
- 
- Records basic simulation statistics:
- - Iteration number
- - Current simulation time
- - Current timestep size
- 
- Data is written both to stderr and to the log file for monitoring and post-processing.
+ * @brief Logs simulation statistics at each timestep.
+ *
+ * This event records the iteration number, simulation time, and timestep size by writing the data to both
+ * standard error and a designated log file. On the first call (when i == 0), it outputs a header line ("i t dt")
+ * to both destinations.
  */
 event logWriting (i++) {
   if (i == 0) {

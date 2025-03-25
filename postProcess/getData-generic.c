@@ -19,7 +19,24 @@ double xmin, ymin, xmax, ymax, Deltax, Deltay;
 scalar D2c[], vel[];
 scalar * list = NULL;
 
-int main(int a, char const *arguments[])
+/**
+   * @brief Entry point for simulation snapshot extraction and processing.
+   *
+   * This function validates command-line arguments and orchestrates the simulation
+   * data restoration, derivative and velocity computations, and interpolation onto
+   * a grid. It expects the program name followed by exactly six parameters:
+   * a filename, the lower bounds (xmin and ymin), the upper bounds (xmax and ymax), and
+   * the number of divisions along the y-axis (ny). If the argument count is incorrect,
+   * an error message and usage instructions are printed to stderr and the program exits
+   * with a status of 1.
+   *
+   * @param a The total number of command-line arguments.
+   * @param arguments Array of command-line argument strings, where arguments[0] is the
+   * program name and the remaining elements provide the required simulation parameters.
+   *
+   * @return int Exit status of the program (1 on error, 0 on success).
+   */
+  int main(int a, char const *arguments[])
 {
   if (a != 7) {
     fprintf(stderr, "Error: Expected 6 arguments\n");

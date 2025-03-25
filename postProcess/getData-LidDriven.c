@@ -18,7 +18,31 @@ double xmin, ymin, xmax, ymax, Deltax, Deltay;
 scalar T[], vel[], psi[], omega[];
 scalar * list = NULL;
 
-int main(int a, char const *arguments[])
+/**
+   * @brief Main entry point for processing fluid dynamics simulation data.
+   *
+   * This function validates the command-line arguments and initializes the simulation
+   * by reading in the file name and domain parameters (xmin, ymin, xmax, ymax, ny). It registers
+   * the necessary scalar fields (T, vel, psi), restores simulation data, applies Dirichlet
+   * boundary conditions for both the velocity and streamfunction, computes the velocity magnitude
+   * and vorticity, and then solves the Poisson equation to update the streamfunction. Finally, it
+   * calculates grid spacing and interpolates the scalar fields over the designated grid.
+   *
+   * Command-line arguments:
+   * - arguments[0]: Program name.
+   * - arguments[1]: Filename of the simulation snapshot.
+   * - arguments[2]: Lower bound (xmin) of the x-domain.
+   * - arguments[3]: Lower bound (ymin) of the y-domain.
+   * - arguments[4]: Upper bound (xmax) of the x-domain.
+   * - arguments[5]: Upper bound (ymax) of the y-domain.
+   * - arguments[6]: Number of grid points along the y-direction (ny).
+   *
+   * @param a Number of command-line arguments (expected to be 7).
+   * @param arguments Array of command-line argument strings.
+   *
+   * @return Returns 1 if the argument validation fails; otherwise, the program proceeds with simulation processing.
+   */
+  int main(int a, char const *arguments[])
 {
   if (a != 7) {
     fprintf(ferr, "Error: Expected 6 arguments\n");

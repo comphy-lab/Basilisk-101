@@ -31,10 +31,14 @@
 #define X0      (-L0/2) // Left boundary
 
 /**
- Create directory for intermediate output files
-
- - @return 0 on success, 1 on failure
-*/
+ * @brief Creates the "intermediate" directory for storing output files.
+ *
+ * This function checks whether the "intermediate" directory exists. If it does not exist,
+ * the function attempts to create it with owner permissions (read, write, and execute).
+ * If directory creation fails, an error message is printed to stderr.
+ *
+ * @return 0 if the directory exists or is successfully created, 1 if directory creation fails.
+ */
 int create_output_directory() {
   struct stat st = {0};
   
@@ -49,12 +53,17 @@ int create_output_directory() {
 }
 
 /**
- Initialize temperature array with a "Dirac delta" approximation using a thin rectangle centered at x=0 with total integral = 1
-
- - @param temperature The temperature array to initialize
- - @param dx Cell size
- - @param eps Half-width of the initial rectangle
-*/
+ * @brief Initializes the temperature field to approximate a Dirac delta function.
+ *
+ * This function initializes the temperature array using a thin rectangular pulse centered at x = 0. The pulse,
+ * which has a width of 2 * eps, is scaled to ensure that its total integral equals 1. For each cell,
+ * the cell-center coordinate is computed as X0 + (i + 0.5) * dx. If the absolute value of this coordinate is less than eps,
+ * the cell is set to 1 / (2 * eps); otherwise, it is set to 0.
+ *
+ * @param temperature Pointer to the temperature array.
+ * @param dx Spatial cell size.
+ * @param eps Half-width of the rectangular pulse.
+ */
 void initialize_temperature(double *temperature, double dx, double eps) {
   for (int i = 0; i < N; i++) {
     double x = X0 + (i + 0.5) * dx; // Cell-center coordinate
@@ -67,12 +76,16 @@ void initialize_temperature(double *temperature, double dx, double eps) {
 }
 
 /**
- Print current temperature field to console
-
- - @param temperature The current temperature array
- - @param dx Cell size
- - @param time Current simulation time
-*/
+ * @brief Prints the current temperature field to the console.
+ *
+ * This function iterates over the temperature array and prints each cell's center position,
+ * temperature, and the current simulation time. The cell center is computed using the global offset
+ * and the provided cell size.
+ *
+ * @param temperature Pointer to the temperature array.
+ * @param dx The size of each cell.
+ * @param time The current simulation time.
+ */
 void print_temperature(double *temperature, double dx, double time) {
   for (int i = 0; i < N; i++) {
     double x = X0 + (i + 0.5) * dx;
@@ -82,13 +95,18 @@ void print_temperature(double *temperature, double dx, double time) {
 }
 
 /**
- Save a snapshot of the temperature field to a CSV file
-
- - @param temperature The current temperature array
- - @param dx Cell size
- - @param time Current simulation time
- - @return 0 on success, 1 on failure
-*/
+ * @brief Saves a snapshot of the temperature field to a CSV file.
+ *
+ * This function writes each cell's position and corresponding temperature value to a CSV file
+ * in the "intermediate" directory. The filename is generated using the current simulation time.
+ * If the file cannot be opened for writing, an error message is printed to stderr and the
+ * function returns 1.
+ *
+ * @param temperature Array of temperature values for each cell.
+ * @param dx Width of each cell (used to calculate cell positions).
+ * @param time Current simulation time, used in the snapshot filename.
+ * @return Returns 0 on success and 1 on failure.
+ */
 int save_snapshot(double *temperature, double dx, double time) {
   char filename[100];
   sprintf(filename, "intermediate/snapshot-%5.4f.csv", time);
@@ -111,13 +129,19 @@ int save_snapshot(double *temperature, double dx, double time) {
 }
 
 /**
- Compute heat fluxes at cell interfaces
-
- q[i+0.5] = - (T[i+1] - T[i])/dx with no-flux boundary conditions
-
- - @param temperature Current temperature array
- - @param flux Array to store computed fluxes (size N+1)
- - @param dx Cell size
+ * @brief Computes heat fluxes at cell interfaces using a finite difference approximation.
+ *
+ * This function calculates the heat fluxes based on the temperature differences between adjacent cells.
+ * The flux at each internal interface is computed as:
+ *
+ *     q[i+0.5] = - (T[i+1] - T[i]) / dx
+ *
+ * No-flux boundary conditions are enforced by setting the flux at both the left (index 0) and right (index N)
+ * boundaries to zero.
+ *
+ * @param temperature Array containing temperature values at cell centers.
+ * @param flux Array to store the computed fluxes, with a size of N+1.
+ * @param dx The cell size.
  */
 void compute_fluxes(double *temperature, double *flux, double dx) {
   flux[0] = 0.0; // Left boundary (no flux)
@@ -129,14 +153,18 @@ void compute_fluxes(double *temperature, double *flux, double dx) {
 }
 
 /**
- Update temperature field based on fluxes
-
- - @param t_current Current temperature array
- - @param t_new New temperature array to be computed
- - @param flux The computed flux array
- - @param dx Cell size
- - @param dt Current time step
-*/
+ * @brief Updates the temperature array using flux differences.
+ *
+ * This function computes a finite-volume update for the temperature field by subtracting
+ * the scaled flux differences from the current temperature. A no-flux condition is applied
+ * at the left and right boundaries by assuming zero flux outside the domain.
+ *
+ * @param t_current Pointer to the current temperature array.
+ * @param t_new Pointer to the array where the updated temperature will be stored.
+ * @param flux Pointer to the array of fluxes at cell interfaces.
+ * @param dx Cell size.
+ * @param dt Time step.
+ */
 void update_temperature(double *t_current, double *t_new, double *flux, 
                         double dx, double dt) {
   for (int i = 0; i < N; i++) {
@@ -157,11 +185,14 @@ void update_temperature(double *t_current, double *t_new, double *flux,
 }
 
 /**
- Copy updated temperature values to current array
-
- - @param t_current Current temperature array (destination)
- - @param t_new New temperature array (source)
-*/
+ * @brief Copies updated temperature values into the current temperature array.
+ *
+ * This function iterates over the temperature arrays and copies each element from the new temperature array
+ * (source) to the current temperature array (destination), updating the entire field.
+ *
+ * @param t_current Destination array to store the updated temperature values.
+ * @param t_new Source array containing the new temperature values.
+ */
 void swap_temperature(double *t_current, double *t_new) {
   for (int i = 0; i < N; i++) {
     t_current[i] = t_new[i];
@@ -169,12 +200,16 @@ void swap_temperature(double *t_current, double *t_new) {
 }
 
 /**
- Save final results to a CSV file
-
- - @param temperature Final temperature array
- - @param dx Cell size
- - @return 0 on success, 1 on failure
-*/
+ * @brief Saves the final simulation temperature distribution to a CSV file.
+ *
+ * This function writes the cell-center coordinates and the corresponding temperature
+ * values into "conduction-transient.csv". The x-coordinate for each cell is computed as
+ * X0 + (i + 0.5) * dx.
+ *
+ * @param temperature Final temperature array.
+ * @param dx Cell size used for computing cell-center coordinates.
+ * @return int 0 if the file was successfully written, 1 if an error occurred while opening the file.
+ */
 int save_final_results(double *temperature, double dx) {
   FILE *file = fopen("conduction-transient.csv", "w");
   if (file == NULL) {
@@ -192,10 +227,12 @@ int save_final_results(double *temperature, double dx) {
 }
 
 /**
- Run the transient heat conduction simulation
-
- - @return 0 on success, non-zero on failure
-*/
+ * @brief Runs the transient heat conduction simulation.
+ *
+ * This function sets up and executes a one-dimensional transient heat conduction simulation using an explicit time integration scheme. It allocates memory for temperature and flux arrays, initializes the temperature field with an approximation of a Dirac delta function, and then iteratively computes fluxes, updates temperatures, and advances the simulation time. Periodic console outputs and CSV snapshots capture the simulation state, and the final temperature distribution is saved to a CSV file.
+ *
+ * @return 0 on success, non-zero on failure.
+ */
 int run_simulation() {
   // Numerical parameters
   const double dx   = L0/N;          // Cell size

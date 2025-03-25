@@ -19,7 +19,30 @@ double xmin, ymin, xmax, ymax, Deltax, Deltay;
 
 scalar * list = NULL;
 
-int main(int a, char const *arguments[])
+/**
+   * @brief Entry point for processing simulation snapshot data.
+   *
+   * This function validates and parses command-line arguments, restores simulation data from a snapshot
+   * file, computes velocity magnitudes from the simulation's vector components, calculates grid spacing,
+   * interpolates scalar fields over a generated grid based on the specified coordinate bounds and resolution,
+   * and writes the interpolated results to an output file.
+   *
+   * If the number of arguments is not equal to 7, the function prints an error message along with usage
+   * instructions to stderr and exits with status 1.
+   *
+   * @param a Number of command-line arguments.
+   * @param arguments Array of command-line argument strings, where:
+   *        - arguments[0]: Program name.
+   *        - arguments[1]: Filename for the simulation snapshot.
+   *        - arguments[2]: Minimum x-coordinate.
+   *        - arguments[3]: Minimum y-coordinate.
+   *        - arguments[4]: Maximum x-coordinate.
+   *        - arguments[5]: Maximum y-coordinate.
+   *        - arguments[6]: Number of divisions along the y-axis.
+   *
+   * @return int Exit status (0 on success, 1 if argument validation fails).
+   */
+  int main(int a, char const *arguments[])
 {
   if (a != 7) {
     fprintf(stderr, "Error: Expected 6 arguments\n");

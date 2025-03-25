@@ -29,6 +29,18 @@ scalar T[];
 #define tmax 1.0
 #define tsnap 0.1
 double K;
+/**
+ * @brief Initializes simulation parameters and starts the transient heat conduction solver.
+ *
+ * This function sets up the computational domain by specifying the domain length, left boundary,
+ * and the number of cells for discretization. It computes a stable timestep based on the CFL
+ * condition for an explicit finite volume scheme and creates an output directory ("intermediate")
+ * for saving simulation snapshots. Finally, it launches the simulation by calling the run() function.
+ *
+ * @note The stability constant K must be properly defined (currently marked as "XX") to ensure a stable solution.
+ *
+ * @return int Exit status.
+ */
 int main() {
   // Domain setup
   L0 = 10.0;     // Domain length
@@ -64,6 +76,15 @@ event init (t = 0) {
 /**
  ## Time integration using explicit finite volume method
 */
+/**
+ * @brief Executes a single explicit Euler time integration step for the 1D heat conduction simulation.
+ *
+ * This event calculates the next time step using dtnext(DT) and updates the temperature field T.
+ * It outlines the process for computing temperature fluxes at cell faces and the corresponding rate of 
+ * temperature change, which are then used to update the temperature field via an explicit Euler step.
+ *
+ * @note The detailed implementations for flux calculation and temperature derivative computation are pending.
+ */
 event integration (i++) {
   // Get timestep for this iteration
   double dt = dtnext(DT);
@@ -104,7 +125,11 @@ event writingFiles (t += tsnap; t < tmax+tsnap) {
 }
 
 /**
- ## Save final results and comparison with analytical solution
+ * @brief Saves the final simulation temperature distribution to a CSV file.
+ *
+ * At the conclusion of the simulation, this event writes the x-coordinate and corresponding
+ * temperature values for each grid cell to "conduction-transient.csv". The resulting file can
+ * be used for post-processing and comparison with analytical solutions.
  */
 event end (t = end) {
   char filename[100];

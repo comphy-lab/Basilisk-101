@@ -17,7 +17,24 @@ double xmin, ymin, xmax, ymax, Deltax, Deltay;
 scalar D2c[], vel[];
 scalar * list = NULL;
 
-int main(int a, char const *arguments[])
+/**
+   * @brief Main entry point for simulation data processing.
+   *
+   * This function parses command-line arguments to obtain simulation parameters,
+   * including the snapshot filename, spatial boundaries (xmin, ymin, xmax, ymax),
+   * and the number of grid points in the y-direction. It expects 7 arguments (the
+   * program name plus 6 user-supplied values). If the argument count is incorrect, it
+   * prints an error message with usage instructions and exits with an error code.
+   *
+   * Upon successful argument parsing, the function restores simulation data from the
+   * specified file, computes derived scalar fields—such as a transformed derivative field
+   * and the velocity magnitude—and interpolates these values over a structured grid.
+   * The resulting data is then written to the output file.
+   *
+   * @return int Returns 1 if the command-line arguments are incorrect; otherwise, an exit
+   *             status indicating the result of the simulation data processing.
+   */
+  int main(int a, char const *arguments[])
 {
   if (a != 7) {
     fprintf(stderr, "Error: Expected 6 arguments\n");

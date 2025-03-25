@@ -46,6 +46,18 @@ scalar T[];
 
 mgstats mgd;
 char nameOut[80], dumpFile[80], logFile[80];
+/**
+ * @brief Initializes and runs the transient heat conduction simulation.
+ *
+ * This function configures the simulation domain and grid for an axisymmetric transient heat
+ * conduction problem using the Basilisk framework. It sets the domain length and grid resolution,
+ * specifies an implicit time step, creates a directory for simulation snapshots, and defines file names
+ * for restart and log outputs. The boundary conditions are established with Dirichlet conditions on
+ * the top and right boundaries and a Neumann condition with a Gaussian flux profile on the left boundary.
+ * Finally, the simulation is started by invoking the run() function.
+ *
+ * @return int Exit status of the program.
+ */
 int main() {
   // Domain setup
   L0 = 4.0;     // Domain length
@@ -101,6 +113,15 @@ event init (t = 0) {
  
  The solver uses multigrid acceleration for improved convergence. Convergence statistics are stored in the mgd variable for logging.
 */
+/**
+ * @brief Integrates the heat diffusion equation over a single time step.
+ *
+ * This function computes the next time step using the explicit helper dtnext(DT) and prepares
+ * a constant diffusion coefficient field for solving the heat equation, ∂T/∂t = ∇²T, via the implicit
+ * diffusion solver. The diffusion coefficient is set uniformly to 1.0 across all cell faces.
+ *
+ * The solver's convergence metric is stored in the global variable mgd.
+ */
 event integration (i++) {
   // Get timestep for this iteration
   double dt = dtnext(DT);

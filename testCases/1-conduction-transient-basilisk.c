@@ -28,6 +28,18 @@ scalar T[];
 #define tmax 1.0
 #define tsnap 0.1
 
+/**
+ * @brief Entry point for the 1D transient heat conduction simulation.
+ *
+ * This function initializes the simulation domain by setting the domain length, computing the left boundary,
+ * defining the number of cells, and calculating the time step based on the CFL condition. It then creates an
+ * output directory for intermediate files and starts the simulation by calling the run() function.
+ *
+ * Side effects:
+ * - Creates an "intermediate" directory for storing simulation outputs.
+ *
+ * @return int The exit status of the program.
+ */
 int main() {
   // Domain setup
   L0 = 10.0;     // Domain length
@@ -60,6 +72,18 @@ event init (t = 0) {
 /**
  ## Time integration using explicit finite volume method
 */
+/**
+ * @brief Advances the temperature field by one time step.
+ *
+ * This event performs a time integration step for the 1D transient heat conduction simulation using an explicit finite volume method.
+ * It computes the fluxes at cell faces based on a central difference:
+ *   $$ q_i = -\\frac{(T_i - T_{i-1})}{\\Delta} $$
+ * and then evaluates the time derivative of temperature in each cell:
+ *   $$ \\frac{dT}{dt} = -\\frac{(q_{i+1} - q_i)}{\\Delta} $$
+ * The temperature field is updated via an explicit Euler scheme:
+ *   $$ T^{n+1} = T^n + dt \\cdot \\frac{dT}{dt} $$
+ * where the timestep, dt, is determined dynamically using dtnext(DT).
+ */
 event integration (i++) {
   // Get timestep for this iteration
   double dt = dtnext(DT);
@@ -99,7 +123,11 @@ event writingFiles (t += tsnap; t < tmax+tsnap) {
 }
 
 /**
- ## Save final results and comparison with analytical solution
+ * @brief Saves the final temperature distribution to a CSV file.
+ *
+ * This event is triggered at the end of the simulation. It writes the spatial coordinate and the corresponding
+ * temperature value to "conduction-transient.csv". Each CSV row contains a pair of values (x, T), allowing for 
+ * comparison with the analytical solution.
  */
 event end (t = end) {
   char filename[100];

@@ -14,14 +14,25 @@ char filename[80];
 scalar shear[], D2p[];
 
 
+/**
+ * @brief Extracts and processes Basilisk simulation data along the x = 0 line.
+ *
+ * This function serves as the main entry point for extracting simulation data. It retrieves
+ * the simulation file name from the command-line arguments (expects the simulation file as the
+ * second argument), applies the necessary boundary conditions (periodic on the right, slip at the
+ * top, and no-slip at the bottom), and restores the simulation data. The function then computes
+ * the shear rate using a central difference along the y-direction and calculates the second invariant
+ * of the deformation tensor at cell centers. Finally, it interpolates and outputs the y-coordinate,
+ * x-velocity, shear rate, and deformation invariant along the x = 0 line across a range of y-values
+ * to the standard error stream.
+ *
+ * @param a Number of command-line arguments (expects at least 2).
+ * @param arguments Array of command-line arguments where arguments[1] is the simulation file name.
+ *
+ * @return int Exit status (0 on success).
+ */
 int main(int a, char const *arguments[])
 {
-  if (a != 2) {
-    fprintf(stderr, "Error: Expected 1 argument\n");
-    fprintf(stderr, "Usage: %s <filename>\n", arguments[0]);
-    return 1;
-  }
-
   // Boundary condition: periodic right - left
   periodic (right);
   // Slip at the top

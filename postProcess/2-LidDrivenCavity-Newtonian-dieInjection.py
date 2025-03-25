@@ -15,6 +15,33 @@ matplotlib.rcParams['text.usetex'] = True
 matplotlib.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
 def gettingfield(filename, zmin, zmax, rmin, rmax, nr):
+    """
+    Extract simulation field data from a simulation file.
+    
+    This function executes the external program "getData-LidDriven" with the given simulation file and
+    boundary parameters to extract numerical data for axial and radial coordinates, temperature, velocity,
+    and stream function. The output is parsed into NumPy arrays, reshaped to a (nz, nr) grid based on the
+    number of radial grid points (nr), rotated 90° counterclockwise, and flipped vertically to ensure the
+    correct orientation for further processing. It returns the processed field arrays along with the total
+    number of axial grid points (nz).
+    
+    Args:
+        filename: Path to the simulation data file.
+        zmin: Minimum axial coordinate.
+        zmax: Maximum axial coordinate.
+        rmin: Minimum radial coordinate.
+        rmax: Maximum radial coordinate.
+        nr: Number of grid points in the radial direction.
+    
+    Returns:
+        tuple: A tuple containing:
+            - R (numpy.ndarray): 2D array of radial coordinate values.
+            - Z (numpy.ndarray): 2D array of axial coordinate values.
+            - T (numpy.ndarray): 2D array of temperature values.
+            - vel (numpy.ndarray): 2D array of velocity values.
+            - psi (numpy.ndarray): 2D array of stream function values.
+            - nz (int): Number of grid points in the axial direction.
+    """
     exe = ["./getData-LidDriven", filename, str(zmin), str(rmin), str(zmax), str(rmax), str(nr)]
     p = sp.Popen(exe, stdout=sp.PIPE, stderr=sp.PIPE)
     stdout, stderr = p.communicate()
@@ -67,6 +94,16 @@ def gettingfield(filename, zmin, zmax, rmin, rmax, nr):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def process_timestep(ti, caseToProcess, folder, tsnap, GridsPerR, rmin, rmax, zmin, zmax, lw):
+    """
+    Generates and saves a two-panel plot for a simulation timestep.
+    
+    Calculates the simulation time using the timestep index and a time increment, then
+    retrieves field data from an intermediate snapshot file. Creates a figure with two
+    subplots—one displaying the rate of strain tensor (with a coolwarm heat map) and
+    the other showing velocity magnitude (with a viridis heat map). Both panels include
+    domain boundaries and streamlines for the stream function. If the snapshot file is
+    missing or the output image already exists, the function prints a warning and exits.
+    """
     t = tsnap * ti
     place = f"{caseToProcess}/intermediate/snapshot-{t:.4f}"
     name = f"{folder}/{int(t*1000):08d}.png"
@@ -119,7 +156,7 @@ def process_timestep(ti, caseToProcess, folder, tsnap, GridsPerR, rmin, rmax, zm
     divider1 = make_axes_locatable(ax1)
     cax1 = divider1.append_axes("right", size="5%", pad=0.1)
     c1 = plt.colorbar(cntrl1, cax=cax1)
-    c1.set_label(r'$T$', fontsize=TickLabel, labelpad=5)
+    c1.set_label(r'$log_{10}(\|\mathcal{D}_{ij}\|)$', fontsize=TickLabel, labelpad=5)
     c1.ax.tick_params(labelsize=TickLabel)
 
     # Second subplot - Velocity Magnitude
@@ -157,6 +194,11 @@ def process_timestep(ti, caseToProcess, folder, tsnap, GridsPerR, rmin, rmax, zm
 
 def main():
     # Get number of CPUs from command line argument, or use all available
+    """
+    Parses command-line arguments and initiates parallel processing of simulation timesteps.
+    
+    This function reads simulation configuration and processing parameters from the command line, including grid settings, simulation bounds, and performance options. It ensures that the output directory exists and then sets up a multiprocessing pool to concurrently process simulation data timesteps by mapping a worker function that generates visualizations.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--CPUs', type=int, default=mp.cpu_count(), help='Number of CPUs to use')
     parser.add_argument('--nGFS', type=int, default=150, help='Number of restart files to process')

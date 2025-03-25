@@ -41,6 +41,16 @@ T[right] = dirichlet(0.);
 
 mgstats mgd;
 char nameOut[80], dumpFile[80], logFile[80];
+/**
+ * @brief Initializes simulation parameters and starts the 2D heat conduction solver.
+ *
+ * This function sets up the simulation domain by defining its length and centering the coordinates,
+ * initializes the grid with a fixed resolution, and configures the time step appropriate for the
+ * implicit solver. It also creates an output directory for snapshots and assigns file names for the 
+ * restart and log files before launching the simulation via the run() function.
+ *
+ * @return Returns 0 upon successful execution.
+ */
 int main() {
   // Domain setup
   L0 = 8.0;     // Domain length
@@ -80,12 +90,24 @@ event init (t = 0) {
 /**
  ## Time integration using implicit diffusion solver
  */
+/**
+ * @brief Performs the integration step in the simulation.
+ *
+ * This event calculates the next time step using dtnext(DT) and applies an implicit diffusion
+ * operation to the temperature field T. The resulting diffusion metric is stored in the global
+ * variable mgd.
+ */
 event integration (i++) {
   // Get timestep for this iteration
   double dt = dtnext(DT);
   mgd = diffusion(T, dt);
 }
 
+/**
+ * @brief Applies wavelet-based adaptive grid refinement on the temperature field.
+ *
+ * This event refines or coarsens the computational grid by estimating the local error in the temperature field T using a wavelet approach. The refinement threshold is set to 1e-4, and the grid is adapted with a maximum level difference of 10.
+ */
 event adapt(i++){
   adapt_wavelet ((scalar *){T},
     (double[]){1e-4},
@@ -101,10 +123,13 @@ event writingFiles (t = 0.0; t += tsnap; t < tmax+tsnap) {
   dump(file=nameOut);
 }
 
-/** 
- ## Log writing
- 
- Write logs every timestep about the convergence of the diffusion solver
+/**
+ * @brief Logs simulation progress and diffusion solver convergence data.
+ *
+ * This event is triggered every timestep to record the current simulation status, including the
+ * iteration count (i), simulation time (t), timestep (dt), and solver metric (mgd.i). On the first
+ * timestep (i == 0), it outputs header information to both stderr and the log file to facilitate
+ * subsequent data interpretation.
  */
 event logWriting (i++) {
 

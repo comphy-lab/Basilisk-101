@@ -95,6 +95,19 @@ double n = 1.0;            // Power law exponent
 int max_iter = 1e4;        // Maximum iterations
 #define DT_MAX (1e-3)      // Maximum timestep
 
+/**
+ * @brief Main entry point for the planar Couette flow simulation.
+ *
+ * This function initializes the simulation grid and domain parameters (domain size, origin, timestep, and convergence
+ * tolerance), and sets the boundary conditions (periodic for right-left, slip at the top, and no-slip at the bottom).
+ * It then sequentially configures and runs simulations for four fluid models—Newtonian, Power law, Herschel-Bulkley, and
+ * Bingham—by setting the corresponding parameters (yield stress, base viscosity, and power-law exponent) and invoking
+ * the simulation routine.
+ *
+ * The output file name is initially sourced from the first command-line argument and updated for each fluid case.
+ *
+ * @return int Exit status of the program.
+ */
 int main(int argc, char const *argv[])
 {
   
@@ -213,8 +226,28 @@ event logfile(i += 500; i <= max_iter) {
 }
 
 /**
-## Calculating viscosity for generalized Newtonian fluid
-*/
+ * @brief Computes the effective viscosity for a generalized Newtonian fluid at cell faces.
+ *
+ * This event updates the face viscosity field by calculating a locally adaptive viscosity based
+ * on the rate-of-strain tensor. The procedure involves:
+ * - Computing deformation tensor components from the velocity field:
+ *   - D11 from consecutive horizontal velocity differences.
+ *   - D22 from averaged vertical velocity differences.
+ *   - D12 from a combination of horizontal and vertical differences.
+ * - Calculating the second invariant of the deformation tensor:
+ *   $$D_2 = \\frac{\\sqrt{D_{11}^2 + D_{22}^2 + 2\\,D_{12}^2}}{\\Delta},$$
+ *   where \\(\\Delta\\) is the grid spacing.
+ * - Determining the equivalent viscosity:
+ *   $$\\mu_{eq} = \\mu_0\\left(\\frac{D_2}{\\sqrt{2}}\\right)^{n-1} + \\frac{\\tauy}{\\sqrt{2}\\,D_2},$$
+ * - Enforcing an upper limit by taking
+ *   $$\\mu = \\min(\\mu_{eq}, \\mu_{max}).$$
+ *
+ * If the deformation invariant \\(D_2\\) is zero, viscosity is set based on the following conditions:
+ * - If the yield stress \\(\\tauy\\) is positive or the exponent \\(n < 1\\), the viscosity defaults to \\(\\mu_{max}\\).
+ * - Otherwise, if \\(n = 1\\) it is set to \\(\\mu_0\\); for other cases, it is set to 0.
+ *
+ * The computed viscosity is scaled by the corresponding face metric and stored in the face viscosity field.
+ */
 event properties(i++) {
   /**
   Implementation of generalized Newtonian viscosity:

@@ -31,6 +31,18 @@ char logFile[80];
 char dumpFile[80];
 char nameOut[80];
 
+/**
+ * @brief Configures and initiates the fluid dynamics simulation.
+ *
+ * This function sets up the computational domain based on the outer cylinder radius,
+ * establishes grid resolution, and configures numerical solver parameters including
+ * convergence tolerance, CFL condition, and timestep for implicit integration.
+ * It also defines dye injection parameters, creates necessary directories for output,
+ * and initializes file names for logging and restart data before starting the simulation
+ * by invoking the run() function.
+ *
+ * @return int Exit status of the simulation application.
+ */
 int main() {
   // Set domain size based on outer cylinder radius
   L0 = 2.0 * OUTER_RADIUS;

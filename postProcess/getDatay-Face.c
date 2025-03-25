@@ -14,13 +14,19 @@ char filename[80];
 face vector shear[], D2p[];
 
 
+/**
+ * @brief Main entry point for extracting y data from a Basilisk simulation file.
+ *
+ * This function sets up boundary conditions (periodic on the right, slip at the top, and no slip at the bottom),
+ * restores simulation data from a file specified by the first command-line argument, and computes shear and
+ * deformation rates using finite difference approximations on the velocity field. The computed values are 
+ * interpolated along the x = 0 line for y-coordinates in the range [-0.5, 0.5) with a step of 0.01, and the 
+ * results are output to the standard error stream.
+ *
+ * The function assumes that the input file exists, is accessible, and that all restoration operations succeed.
+ */
 int main(int a, char const *arguments[])
 {
-  if (a != 2) {
-    fprintf(stderr, "Error: Expected 1 argument\n");
-    fprintf(stderr, "Usage: %s <filename>\n", arguments[0]);
-    return 1;
-  }
   // Boundary condition: periodic right - left
   periodic (right);
   // Slip at the top

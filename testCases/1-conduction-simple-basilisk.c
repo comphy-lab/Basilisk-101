@@ -21,7 +21,14 @@
 // Declare scalar field for temperature
 scalar T[];
 T[left] = dirichlet(0.0); // left boundary
-T[right] = dirichlet(1.0); // right boundary
+T[right] = dirichlet(1.0); /**
+ * @brief Initializes and starts the 1D steady-state heat conduction simulation.
+ *
+ * Configures the computational domain by setting the domain length (L0 = 1.0), left boundary (X0 = 0.0),
+ * and number of cells (N = 200) for spatial discretization. Calculates the time step (DT) using the CFL stability
+ * criterion for the explicit scheme, creates an output directory ("intermediate") for simulation results, and 
+ * invokes the simulation routine via run().
+ */
 
 int main() {
   // Domain setup
@@ -56,6 +63,13 @@ event init (t = 0) {
 /**
  ## Time integration using explicit finite volume method
  */
+/**
+ * @brief Advances the temperature field by one time step.
+ *
+ * This event implements an explicit finite-difference update for the 1D heat conduction equation.
+ * It computes the discrete Laplacian using the values from the neighboring cells and updates the
+ * temperature field with the time step DT. The update is applied to every cell in the domain.
+ */
 event marching (i++) {
   foreach() {
     // Proper heat equation time stepping
@@ -64,7 +78,14 @@ event marching (i++) {
 }
 
 /**
- ## Monitor convergence to steady state
+ * @brief Monitors the convergence of the temperature field to the steady state.
+ *
+ * This event computes the normalized error between the simulated temperature field and 
+ * the analytical solution T(x) = x by averaging the absolute differences over all grid cells.
+ * The error is printed every 1000 iterations for monitoring purposes. When the normalized error 
+ * falls below 1e-10, the event prints a convergence message and returns 1 to signal simulation termination.
+ *
+ * @return int Returns 1 when the convergence criterion is met.
  */
 event testingConvergence (i++; i < 100000) {
   double error = 0.0;
@@ -87,7 +108,11 @@ event testingConvergence (i++; i < 100000) {
 }
 
 /**
- ## Save final results and comparison with analytical solution
+ * @brief Saves the final simulation results to a CSV file.
+ *
+ * This event is triggered at the end of the simulation and writes the computed x-coordinates
+ * and corresponding temperature values to "conduction-simple.csv". The output file provides data
+ * that can be used to compare the numerical solution with the analytical solution.
  */
 event end (t = end) {
   char filename[100];

@@ -37,6 +37,15 @@ T[right] = neumann(0.);
 #define tmax 1.0
 #define tsnap 0.1
 
+/**
+ * @brief Main simulation driver for the 1D transient heat conduction solver.
+ *
+ * Initializes the simulation domain and parameters—setting domain length (10.0), left boundary (-L0/2), number of cells (10000),
+ * and a timestep (1e-4) suitable for the implicit solver. Creates the output directory for intermediate results and starts
+ * the simulation by calling the run() function.
+ *
+ * @return int Exit status of the program (0 indicates successful execution).
+ */
 int main() {
   // Domain setup
   L0 = 10.0;     // Domain length
@@ -70,6 +79,16 @@ event init (t = 0) {
 /**
  ## Time integration using implicit diffusion solver
 */
+/**
+ * @brief Advances the temperature field by one time step using diffusion.
+ *
+ * This event computes the next time step with `dtnext(DT)` and then updates the temperature field `T`
+ * by solving the diffusion (heat conduction) equation:
+ * 
+ *   $$\frac{\partial T}{\partial t} = \nabla^2 T$$
+ * 
+ * which corresponds to a unit diffusivity.
+ */
 event integration (i++) {
   // Get timestep for this iteration
   double dt = dtnext(DT);
@@ -103,8 +122,12 @@ event writingFiles (t += tsnap; t < tmax+tsnap) {
 }
 
 /**
- ## Save final results and comparison with analytical solution
-*/
+ * @brief Saves the final simulation results to a CSV file.
+ *
+ * At the end of the simulation, this event writes the spatial coordinates and corresponding
+ * temperature values to "conduction-transient.csv". Each line in the file contains the position and
+ * temperature, which can be used to compare the numerical results with the analytical solution.
+ */
 event end (t = end) {
   char filename[100];
   sprintf(filename, "conduction-transient.csv");

@@ -21,7 +21,31 @@ double xmin, ymin, xmax, ymax, Deltax, Deltay;
 scalar D2c[], vel[], trA[];
 scalar * list = NULL;
 
-int main(int a, char const *arguments[])
+/**
+   * @brief Entry point for processing viscoelastic simulation snapshot data.
+   *
+   * This function reads simulation parameters and a data file specified via command-line
+   * arguments, computes derived quantities (such as shear rate and trace of the conformation
+   * tensor) from the simulation data, and interpolates the results onto a uniform grid.
+   *
+   * The function expects exactly 7 command-line arguments:
+   *   1. Program name.
+   *   2. Input simulation data filename.
+   *   3. Minimum x-coordinate.
+   *   4. Minimum y-coordinate.
+   *   5. Maximum x-coordinate.
+   *   6. Maximum y-coordinate.
+   *   7. Number of grid points in the y-direction.
+   *
+   * If the number of arguments is incorrect, an error message is printed to stderr and the
+   * program exits with a status of 1.
+   *
+   * This function utilizes external global variables and helper routines (e.g., restore(),
+   * list_add(), matrix_new()) and processes the simulation grid data using a foreach() macro.
+   *
+   * @return int Returns 0 upon successful execution, or 1 if the command-line arguments are invalid.
+   */
+  int main(int a, char const *arguments[])
 {
   if (a != 7) {
     fprintf(stderr, "Error: Expected 6 arguments\n");

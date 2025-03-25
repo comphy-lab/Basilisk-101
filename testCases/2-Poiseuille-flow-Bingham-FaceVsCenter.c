@@ -96,8 +96,37 @@ int max_iter = 1e4;        // Maximum iterations
 bool face_center = true;   // Flag for face vs cell center calculations
 #define DT_MAX (1e-3)      // Maximum timestep
 
+/**
+ * @brief Entry point for the planar Couette flow simulation.
+ *
+ * This function initializes the grid, domain parameters, and boundary conditions for a generalized Newtonian fluid 
+ * undergoing planar Couette flow. It reads the output file name from the first command-line argument and sets up a grid 
+ * with a resolution of 2^6 cells, a domain length L0 = 1.0, and an origin at (-0.5, -0.5). Time-stepping properties 
+ * and a convergence tolerance are also configured.
+ *
+ * The boundary conditions are defined as periodic on the left-right boundaries, with slip conditions on the top (Neumann) 
+ * and no-slip conditions on the bottom (Dirichlet). The function then runs two simulation cases:
+ * - Case 0 (face-centered): Uses face-centered calculations for the deformation tensor and assigns "face_center" as the output file name.
+ * - Case 1 (cell-centered): Uses cell-centered calculations and assigns "cell_center" as the output file name.
+ *
+ * In each case, default fluid parameters (yield stress, base viscosity, and power law exponent) are set. These parameters 
+ * correspond to different fluid types:
+ * - Newtonian:          μ₀ = 1.0, τᵧ = 0.0, n = 1
+ * - Power law:          μ₀ = 1.0, τᵧ = 0.0, n = 0.5
+ * - Herschel-Bulkley:   μ₀ = 1.0, τᵧ = 0.25, n = 0.5
+ * - Bingham:            μ₀ = 1.0, τᵧ = 0.25, n = 1
+ *
+ * Each case is logged and executed by invoking the run() function.
+ *
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line argument strings; argv[1] specifies the output file name.
+ * @return int Returns 0 upon successful completion.
+ */
 int main(int argc, char const *argv[])
 {
+  
+  sprintf(file_name, "%s", argv[1]);
+  
   // Initialize grid and domain
   init_grid(1<<6);
   L0 = 1.0;
@@ -192,8 +221,27 @@ event logfile(i += 500; i <= max_iter) {
 }
 
 /**
-## Calculating viscosity for generalized Newtonian fluid
-*/
+ * @brief Compute and update the effective viscosity for a generalized Newtonian fluid.
+ *
+ * This event calculates the effective viscosity using a regularized power-law model based on the
+ * second invariant of the rate of deformation tensor. Depending on the global flag `face_center`, the
+ * tensor components are computed either at the face centers or the cell centers.
+ *
+ * The second invariant is computed as:
+ * \f[
+ * D_2 = \frac{\sqrt{D_{11}^2 + 2D_{12}^2 + D_{22}^2}}{\Delta}
+ * \f]
+ *
+ * This invariant is then used to calculate the equivalent viscosity:
+ * \f[
+ * \mu_{eq} = \mu_0 \left(\frac{D_2}{\sqrt{2}}\right)^{n-1} + \frac{\tau_y}{\sqrt{2}D_2}
+ * \f]
+ *
+ * The final viscosity is taken as the minimum between \f$\mu_{eq}\f$ and \f$\mu_{max}\f$. In cases
+ * where \f$D_2 \leq 0\f$, the viscosity is assigned either \f$\mu_{max}\f$ or \f$\mu_0\f$ based on the
+ * yield stress \f$\tau_y\f$ and the power-law exponent \f$n\f$. The computed viscosity is then applied
+ * to the simulation grid.
+ */
 event properties(i++) {
   /**
   Implementation of generalized Newtonian viscosity:
