@@ -1,58 +1,60 @@
 #!/bin/zsh
-# tested on MacOS only. Let us know if you find issues running with Linux by opening an issue. 
-# modify using http://basilisk.fr/src/INSTALL 
-# ensures that we are always using the latest version of basilisk
+# Build the Basilisk source committed alongside this project.
+set -eu
 
-# Check if --hard flag is passed
-HARD_RESET=false
-if [[ "$1" == "--hard" ]]; then
-    HARD_RESET=true
-fi
-
-# Function to install basilisk
-install_basilisk() {
-    darcs clone http://basilisk.fr/basilisk
-    cd basilisk/src
-
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "Using MacOS"
-        ln -s config.osx config
-    else
-        echo "Using Linux"
-        ln -s config.gcc config
-    fi
-    make -k
-    make
-}
-
-# Remove project config always
-rm -rf .project_config
-
-# Check if basilisk needs to be installed
-if [[ "$HARD_RESET" == true ]] || [[ ! -d "basilisk" ]]; then
-    echo "Installing basilisk..."
-    rm -rf basilisk
-    install_basilisk
+if [[ $# == 1 && "$1" == "--hard" ]]; then
+    hard=true
+elif [[ $# == 0 ]]; then
+    hard=false
 else
-    echo "Using existing basilisk installation..."
-    cd basilisk/src
+    printf 'Usage: %s [--hard]\n' "$0" >&2
+    exit 2
 fi
 
-# Setup environment variables
-echo "export BASILISK=$PWD" >> ../../.project_config
-echo "export PATH=\$PATH:\$BASILISK" >> ../../.project_config
-
-source ../../.project_config
-
-# Check if qcc is working properly
-echo "\nChecking qcc installation..."
-if ! qcc --version > /dev/null 2>&1; then
-    echo "\033[0;31mError: qcc is not working properly.\033[0m"
-    echo "Please ensure you have Xcode Command Line Tools installed."
-    echo "You can install them by running: xcode-select --install"
-    echo "For more details, visit: http://basilisk.fr/src/INSTALL"
+root=$(cd -- "$(dirname -- "$0")" && pwd -P)
+basilisk="$root/basilisk/src"
+# The committed tree carries local fixes, such as the bound on field names in
+# restore(). A tree fetched from upstream by an older copy of this script lacks
+# them, so refuse to build it.
+if [[ ! -f "$basilisk/Makefile" || ! -f "$basilisk/qcc.c" ]] ||
+   ! grep -Fq 'A dump is external data' "$basilisk/output.h" 2>/dev/null; then
+    printf '%s\n' 'Restore the vendored basilisk/ directory from this project checkout before building.' >&2
     exit 1
-else
-    echo "\033[0;32mqcc is properly installed.\033[0m"
-    qcc --version
 fi
+
+(
+    cd -- "$basilisk"
+    if [[ "$OSTYPE" == darwin* ]]; then
+        platform_config=config.osx
+    else
+        platform_config=config.gcc
+    fi
+    # The checkout carries the config link and binaries of the machine that
+    # committed them. Keep a custom config; point a stock one at this platform.
+    if [[ ! -e config && ! -L config ]] ||
+       [[ config -ef config.osx || config -ef config.gcc ]]; then
+        ln -sfn "$platform_config" config
+    fi
+    # Rebuild from source for --hard, or when the binaries cannot run here, or
+    # were built somewhere else: qcc looks for its headers in the directory it
+    # was built in, which for the committed binaries is another machine's.
+    # "make -B" rebuilds ast/interpreter from the wrong directory and fails.
+    # The path is a whole string in qcc, so match it whole, not as a part.
+    if [[ "$hard" == true ]] || ! ./qcc --version >/dev/null 2>&1 ||
+       ! LC_ALL=C tr '\0' '\n' < qcc | LC_ALL=C grep -Fxq -- "$basilisk"; then
+        make clean
+        rm -f ast/grammar  # not removed by "make clean"; make rebuilds it
+    fi
+    # Serial: the Makefile does not order qcc after the ast sub-build.
+    make -j1
+)
+
+# qcc makes a temporary directory where it runs, so check it from the source tree.
+(cd -- "$basilisk" && ./qcc --version)
+# Single quotes keep the path literal for any shell that reads this file,
+# including the /bin/sh the simulation Makefiles use.
+quote="'"
+{
+    printf "export BASILISK='%s'\n" "${basilisk//$quote/$quote\\$quote$quote}"
+    printf '%s\n' 'export PATH="$BASILISK:$PATH"'
+} > "$root/.project_config"
