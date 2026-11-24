@@ -2,7 +2,7 @@
 # Build the Basilisk source committed alongside this project.
 set -eu
 
-if [[ "${1:-}" == "--hard" ]]; then
+if [[ $# == 1 && "$1" == "--hard" ]]; then
     hard=true
 elif [[ $# == 0 ]]; then
     hard=false
@@ -45,7 +45,8 @@ fi
     make
 )
 
-"$basilisk/qcc" --version
+# qcc makes a temporary directory where it runs, so check it from the source tree.
+(cd -- "$basilisk" && ./qcc --version)
 # Paths must remain literal even when the project directory contains spaces.
 {
     printf 'export BASILISK=%q\n' "$basilisk"
