@@ -32,23 +32,30 @@ fi
     # The checkout carries the config link and binaries of the machine that
     # committed them. Keep a custom config; point a stock one at this platform.
     current_config=$(readlink config 2>/dev/null || true)
+    current_config=${current_config#./}
     if [[ ! -e config && ! -L config ]] ||
        [[ "$current_config" == config.osx || "$current_config" == config.gcc ]]; then
         ln -sfn "$platform_config" config
     fi
-    # Rebuild from source for --hard, or when the committed binaries cannot run
-    # here. "make -B" rebuilds ast/interpreter from the wrong directory and fails.
-    if [[ "$hard" == true ]] || ! ./qcc --version >/dev/null 2>&1; then
+    # Rebuild from source for --hard, or when the binaries cannot run here, or
+    # were built somewhere else: qcc looks for its headers in the directory it
+    # was built in, which for the committed binaries is another machine's.
+    # "make -B" rebuilds ast/interpreter from the wrong directory and fails.
+    if [[ "$hard" == true ]] || ! ./qcc --version >/dev/null 2>&1 ||
+       ! grep -Fq -- "$basilisk" qcc; then
         make clean
         rm -f ast/grammar  # not removed by "make clean"; make rebuilds it
     fi
-    make
+    # Serial: the Makefile does not order qcc after the ast sub-build.
+    make -j1
 )
 
 # qcc makes a temporary directory where it runs, so check it from the source tree.
 (cd -- "$basilisk" && ./qcc --version)
-# Paths must remain literal even when the project directory contains spaces.
+# Single quotes keep the path literal for any shell that reads this file,
+# including the /bin/sh the simulation Makefiles use.
+quote="'"
 {
-    printf 'export BASILISK=%q\n' "$basilisk"
+    printf "export BASILISK='%s'\n" "${basilisk//$quote/$quote\\$quote$quote}"
     printf '%s\n' 'export PATH="$BASILISK:$PATH"'
 } > "$root/.project_config"
